@@ -38,7 +38,7 @@ int main(int, char**)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    ImFont* roboto_light = io.Fonts->AddFontFromFileTTF(ROBOTO_LIGHT_PATH, 16);
+    ImFont* font = io.Fonts->AddFontFromFileTTF(ROBOTO_REGULAR_PATH, 16);
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -58,6 +58,13 @@ int main(int, char**)
     request.url = "https://httpbin.org/anything";
     fman::HttpResponse response;
     std::string no_res = "No response";
+
+    ImGuiWindowFlags flags = 0;
+    //flags |= ImGuiWindowFlags_NoTitleBar;         // Başlık çubuğunu kaldır
+    flags |= ImGuiWindowFlags_NoResize;           // Yeniden boyutlandırmayı kaldır
+    flags |= ImGuiWindowFlags_NoMove;             // Taşımayı kaldır
+    flags |= ImGuiWindowFlags_NoCollapse;         // Daraltma butonunu kaldır
+    flags |= ImGuiWindowFlags_NoBringToFrontOnFocus; // Odaklanınca öne getirmeyi kaldır
 
     // Main loop
     bool done = false;
@@ -82,99 +89,110 @@ int main(int, char**)
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-
+        ImVec2 viewport = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+        ImVec2 pos = ImGui::GetMainViewport()->Pos;
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
-            ImGui::PushFont(roboto_light);
-            ImGui::Begin("API Client");
+            ImGui::PushFont(font);
+            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+
+            ImGui::SetNextWindowPos(pos);
+            ImGui::SetNextWindowSize(viewport);
+
+            ImGui::Begin("API Client", nullptr, flags);
 
             // Ana pencereyi üç bölüme ayır
-            const float tabWidth = 150.0f;
+            const float tabWidth = 100.0f;
             const float contentPadding = 10.0f;
             float availWidth = ImGui::GetContentRegionAvail().x;
             float contentWidth = (availWidth - tabWidth - contentPadding) / 2;
 
-            // Sol taraftaki tablar için
-            ImGui::BeginChild("Tabs", ImVec2(tabWidth, 0), true);
             static int selected = 0;
-            if (ImGui::Selectable("GET", selected == 0)) selected = 0;
-            if (ImGui::Selectable("POST", selected == 1)) selected = 1;
-            if (ImGui::Selectable("DELETE", selected == 2)) selected = 2;
-            if (ImGui::Selectable("PUT", selected == 3)) selected = 3;
-            if (ImGui::Selectable("PATCH", selected == 4)) selected = 4;
-            ImGui::EndChild();
-
-            ImGui::SameLine();
-
-            // Orta kısım - Request alanı
-            ImGui::BeginChild("Content", ImVec2(contentWidth, 0), true);
-
-            // Her tab için ayrı input ve buton
-            switch (selected) {
-                case 0: // GET
-                    ImGui::Text("GET Request");
-                    ImGui::InputText("URL##get", &request.url);
-                    ImGui::InputTextMultiline("Data##get", &request.body,  ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
-                    if (ImGui::Button("Fetch##get")) {
-                        request.method = fman::HttpMethod::GET;
-                        curl_client->Request(request, response);
-                    }
-                    break;
-
-                case 1: // POST
-                    ImGui::Text("POST Request");
-                    ImGui::InputText("URL##post", &request.url);
-                    ImGui::InputTextMultiline("Data##post", &request.body,  ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
-                    if (ImGui::Button("Fetch##post")) {
-                        request.method = fman::HttpMethod::POST;
-                        curl_client->Request(request, response);
-                    }
-                    break;
-
-                case 2: // DELETE
-                    ImGui::Text("DELETE Request");
-                    ImGui::InputText("ID##delete", &request.url);
-                    if (ImGui::Button("Fetch##delete")) {
-                        // curl
-                    }
-                    break;
-
-                case 3: // PUT
-                    ImGui::Text("PUT Request");
-                    ImGui::InputTextMultiline("Data##put", &request.url, ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
-                    if (ImGui::Button("Fetch##put")) {
-                        // curl
-                    }
-                    break;
-
-                case 4: // PATCH
-                    ImGui::Text("PATCH Request");
-                ImGui::InputTextMultiline("Data##patch", &request.url, ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
-                if (ImGui::Button("Fetch##patch")) {
-                    // curl
-                }
-                break;
+            {   // Sol taraftaki tablar için
+                ImGui::BeginChild("Tabs", ImVec2(tabWidth, 0), true);
+                
+                if (ImGui::Selectable("GET", selected == 0)) selected = 0;
+                if (ImGui::Selectable("POST", selected == 1)) selected = 1;
+                if (ImGui::Selectable("DELETE", selected == 2)) selected = 2;
+                if (ImGui::Selectable("PUT", selected == 3)) selected = 3;
+                if (ImGui::Selectable("PATCH", selected == 4)) selected = 4;
+                ImGui::EndChild();
             }
-            ImGui::EndChild();
 
             ImGui::SameLine();
 
-            // Sağ kısım - Response alanı
-            ImGui::BeginChild("Response", ImVec2(0, 0), true);
-            ImGui::Text("Response");
 
-            // Response başlık bilgileri
-            ImGui::Text("Status: %d", response.code.value_or(0));
+            {   // Orta kısım - Request alanı
+                ImGui::BeginChild("Content", ImVec2(contentWidth, 0), true);
+
+                // Her tab için ayrı input ve buton
+                switch (selected) {
+                    case 0: // GET
+                        ImGui::Text("GET Request");
+                        ImGui::InputText("URL##get", &request.url);
+                        ImGui::InputTextMultiline("Data##get", &request.body,  ImVec2(ImGui::GetContentRegionAvail().x * 0.8f, ImGui::GetWindowHeight() * 0.4f));
+                        if (ImGui::Button("Fetch##get")) {
+                            request.method = fman::HttpMethod::GET;
+                            curl_client->Request(request, response);
+                        }
+                        break;
+
+                    case 1: // POST
+                        ImGui::Text("POST Request");
+                        ImGui::InputText("URL##post", &request.url);
+                        ImGui::InputTextMultiline("Data##post", &request.body,  ImVec2(ImGui::GetContentRegionAvail().x * 0.8f, ImGui::GetWindowHeight() * 0.4f));
+                        if (ImGui::Button("Fetch##post")) {
+                            request.method = fman::HttpMethod::POST;
+                            curl_client->Request(request, response);
+                        }
+                        break;
+
+                    case 2: // DELETE
+                        ImGui::Text("DELETE Request");
+                        ImGui::InputText("ID##delete", &request.url);
+                        if (ImGui::Button("Fetch##delete")) {
+                            // curl
+                        }
+                        break;
+
+                    case 3: // PUT
+                        ImGui::Text("PUT Request");
+                        ImGui::InputTextMultiline("Data##put", &request.url, ImVec2(ImGui::GetContentRegionAvail().x * 0.8f, ImGui::GetWindowHeight() * 0.4f));
+                        if (ImGui::Button("Fetch##put")) {
+                            // curl
+                        }
+                        break;
+
+                    case 4: // PATCH
+                        ImGui::Text("PATCH Request");
+                    ImGui::InputTextMultiline("Data##patch", &request.url, ImVec2(ImGui::GetContentRegionAvail().x * 0.8f, ImGui::GetWindowHeight() * 0.4f));
+                    if (ImGui::Button("Fetch##patch")) {
+                        // curl
+                    }
+                    break;
+                }
+                ImGui::EndChild();
+            }
+
             ImGui::SameLine();
-            ImGui::Text("Time: %.2f ms", response.time_took);
 
-            // Response içeriği
-            ImGui::Separator();
-            ImGui::BeginChild("ResponseContent", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
-            ImGui::InputTextMultiline("##", (response.data.has_value()) ? &response.data.value() : &no_res,
-                                      ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_ReadOnly);
-            ImGui::EndChild();
+            {
+                // Sağ kısım - Response alanı
+                ImGui::BeginChild("Response", ImVec2(0, 0), true);
+                ImGui::Text("Response");
 
+                // Response başlık bilgileri
+                ImGui::Text("Status: %d", response.code.value_or(0));
+                ImGui::SameLine();
+                ImGui::Text("Time: %.2f ms", response.time_took);
+
+                // Response içeriği
+                ImGui::Separator();
+                ImGui::BeginChild("ResponseContent", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
+                ImGui::InputTextMultiline("##", (response.data.has_value()) ? &response.data.value() : &no_res,
+                                          ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_ReadOnly);
+                ImGui::EndChild();
+            }
             // Clear button
             if (ImGui::Button("Clear Response", ImVec2(-1, 0))) {
                 response = fman::HttpResponse();
@@ -182,6 +200,7 @@ int main(int, char**)
 
             ImGui::EndChild();
             ImGui::End();
+            ImGui::PopStyleVar();
             ImGui::PopFont();
         }
 
