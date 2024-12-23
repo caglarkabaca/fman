@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(fuckman)
+project(fman)
 
 set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(submodules/SDL EXCLUDE_FROM_ALL)
@@ -21,7 +21,13 @@ set(IMGUI_ALL_SOURCES
         ${IMGUI_BACKEND_SOURCES}
 )
 
-add_executable(fuckman main.cpp ${IMGUI_ALL_SOURCES})
+find_package(CURL REQUIRED)
 
-target_include_directories(fuckman PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
-target_link_libraries(fuckman PRIVATE SDL3::SDL3)
+set(FMAN_SOURCES main.cpp)
+
+add_executable(fman ${FMAN_SOURCES} ${IMGUI_ALL_SOURCES})
+
+target_include_directories(fman PRIVATE ${IMGUI_DIR} ${IMGUI_DIR}/backends)
+target_link_libraries(fman PRIVATE SDL3::SDL3 CURL::libcurl)
+
+file(COPY resources DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
