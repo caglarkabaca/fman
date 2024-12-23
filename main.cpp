@@ -51,12 +51,11 @@ int main(int, char**)
     ImGui_ImplSDLRenderer3_Init(renderer);
 
     // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    std::string get_url = "\0";
     fman::CurlClient *curl_client = fman::CurlClient::GetInstance();
+    std::string get_url = "https://httpbin.org/get";
+    fman::HttpResponse get_response;
 
     // Main loop
     bool done = false;
@@ -86,10 +85,21 @@ int main(int, char**)
         {
             ImGui::PushFont(roboto_light);
             ImGui::Begin("curl GET test");
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::InputText("url", &get_url);
             if (ImGui::Button("fetch")) {
-                curl_client->Get(get_url);
+                curl_client->Get(get_url, get_response);
             }
+
+            if (get_response.code.has_value() && ImGui::TreeNodeEx("Response", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGuiInputTextFlags flags = ImGuiInputTextFlags_ReadOnly;
+                ImGui::Text("Status Code: %d, Time Took: %f ms", get_response.code.value(), get_response.time_took);
+                ImGui::InputTextMultiline("##", &get_response.data.value(), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), flags);
+                ImGui::Text("Size: %d bytes", get_response.data.value().size());
+                ImGui::TreePop();
+            }
+
+
             ImGui::End();
             ImGui::PopFont();
         }
