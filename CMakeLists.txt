@@ -8,8 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 add_subdirectory(submodules/SDL EXCLUDE_FROM_ALL)
+set(SDL3_DIR "${CMAKE_SOURCE_DIR}/submodules/SDL")
 
 set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/submodules/imgui")
+set(IMGUI_BACKEND_DIR "${IMGUI_DIR}/backends")
 set(IMGUI_SOURCES
         ${IMGUI_DIR}/imgui.cpp
         ${IMGUI_DIR}/imgui_demo.cpp
@@ -19,8 +21,8 @@ set(IMGUI_SOURCES
         ${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp
 )
 set(IMGUI_BACKEND_SOURCES
-        ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
-        ${IMGUI_DIR}/backends/imgui_impl_sdlrenderer3.cpp
+        ${IMGUI_BACKEND_DIR}/imgui_impl_sdl3.cpp
+        ${IMGUI_BACKEND_DIR}/imgui_impl_sdlrenderer3.cpp
 )
 set(IMGUI_ALL_SOURCES
         ${IMGUI_SOURCES}
@@ -34,7 +36,7 @@ add_library(fman_lib
     lib/fman_http.cpp
     lib/fman_window_manager.cpp
 )
-target_include_directories(fman_lib PRIVATE ${IMGUI_DIR})
+target_include_directories(fman_lib PRIVATE ${IMGUI_DIR} ${IMGUI_BACKEND_DIR} ${SDL3_DIR})
 
 add_executable(fman main.cpp ${IMGUI_ALL_SOURCES})
 target_include_directories(fman PRIVATE lib)
