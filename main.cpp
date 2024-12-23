@@ -56,6 +56,8 @@ int main(int, char**)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     std::string get_url = "\0";
+    char responseBuffer[4096] = {0};
+    char inputBuffer[128] = {0};
     fman::CurlClient *curl_client = fman::CurlClient::GetInstance();
 
     // Main loop
@@ -85,11 +87,89 @@ int main(int, char**)
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
             ImGui::PushFont(roboto_light);
-            ImGui::Begin("curl GET test");
-            ImGui::InputText("url", &get_url);
-            if (ImGui::Button("fetch")) {
-                curl_client->Get(get_url);
+            ImGui::Begin("API Client");
+
+            // Ana pencereyi üç bölüme ayır
+            const float tabWidth = 150.0f;
+            const float contentPadding = 10.0f;
+            float availWidth = ImGui::GetContentRegionAvail().x;
+            float contentWidth = (availWidth - tabWidth - contentPadding) / 2;
+
+            // Sol taraftaki tablar için
+            ImGui::BeginChild("Tabs", ImVec2(tabWidth, 0), true);
+            static int selected = 0;
+            if (ImGui::Selectable("GET", selected == 0)) selected = 0;
+            if (ImGui::Selectable("POST", selected == 1)) selected = 1;
+            if (ImGui::Selectable("DELETE", selected == 2)) selected = 2;
+            if (ImGui::Selectable("UPDATE", selected == 3)) selected = 3;
+            ImGui::EndChild();
+
+            ImGui::SameLine();
+
+            // Orta kısım - Request alanı
+            ImGui::BeginChild("Content", ImVec2(contentWidth, 0), true);
+
+            // Her tab için ayrı input ve buton
+            switch (selected) {
+                case 0: // GET
+                    ImGui::Text("GET Request");
+                    ImGui::InputText("URL##get", &get_url);
+                    if (ImGui::Button("Fetch##get")) {
+                        curl_client->Get(get_url);
+                    }
+                    break;
+
+                case 1: // POST
+                    ImGui::Text("POST Request");
+                    ImGui::InputTextMultiline("Data##post", &get_url,  ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
+                    if (ImGui::Button("Fetch##post")) {
+                        
+                    }
+                    break;
+
+                case 2: // DELETE
+                    ImGui::Text("DELETE Request");
+                    ImGui::InputText("ID##delete", &get_url);
+                    if (ImGui::Button("Fetch##delete")) {
+                        
+                    }
+                    break;
+
+                case 3: // UPDATE
+                    ImGui::Text("UPDATE Request");
+                    ImGui::InputTextMultiline("Data##update", &get_url, ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
+                    if (ImGui::Button("Fetch##update")) {
+                        
+                    }
+                    break;
             }
+            ImGui::EndChild();
+
+            ImGui::SameLine();
+
+            // Sağ kısım - Response alanı
+            ImGui::BeginChild("Response", ImVec2(0, 0), true);
+            ImGui::Text("Response");
+
+            // Response başlık bilgileri
+            static int statusCode = 200;
+            static float responseTime = 0.0f;
+            ImGui::Text("Status: %d", statusCode);
+            ImGui::SameLine();
+            ImGui::Text("Time: %.2f ms", responseTime);
+
+            // Response içeriği
+            ImGui::Separator();
+            ImGui::BeginChild("ResponseContent", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
+            ImGui::TextWrapped("%s", responseBuffer);
+            ImGui::EndChild();
+
+            // Clear button
+            if (ImGui::Button("Clear Response", ImVec2(-1, 0))) {
+                memset(responseBuffer, 0, sizeof(responseBuffer));
+            }
+
+            ImGui::EndChild();
             ImGui::End();
             ImGui::PopFont();
         }
