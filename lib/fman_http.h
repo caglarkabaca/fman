@@ -2,9 +2,12 @@
 #define FMAN_HTTP_H
 
 #include <iostream>
+#include <vector>
 #include <curl/curl.h>
 #include <mutex>
 #include <thread>
+#include <optional>
+
 
 namespace fman {
 

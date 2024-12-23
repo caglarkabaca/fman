@@ -55,9 +55,9 @@ int main(int, char**)
 
     std::string get_url = "\0";
     char responseBuffer[4096] = {0};
-    char inputBuffer[128] = {0};
+
     fman::CurlClient *curl_client = fman::CurlClient::GetInstance();
-    std::string get_url = "https://httpbin.org/get";
+    //std::string get_url = "https://httpbin.org/get";
     fman::HttpResponse get_response;
 
     // Main loop
@@ -115,7 +115,7 @@ int main(int, char**)
                     ImGui::Text("GET Request");
                     ImGui::InputText("URL##get", &get_url);
                     if (ImGui::Button("Fetch##get")) {
-                        curl_client->Get(get_url);
+                        curl_client->Get(get_url, get_response);
                     }
                     break;
 
@@ -123,7 +123,7 @@ int main(int, char**)
                     ImGui::Text("POST Request");
                     ImGui::InputTextMultiline("Data##post", &get_url,  ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
                     if (ImGui::Button("Fetch##post")) {
-                        
+                        // curl
                     }
                     break;
 
@@ -131,7 +131,7 @@ int main(int, char**)
                     ImGui::Text("DELETE Request");
                     ImGui::InputText("ID##delete", &get_url);
                     if (ImGui::Button("Fetch##delete")) {
-                        
+                        // curl
                     }
                     break;
 
@@ -139,7 +139,7 @@ int main(int, char**)
                     ImGui::Text("UPDATE Request");
                     ImGui::InputTextMultiline("Data##update", &get_url, ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
                     if (ImGui::Button("Fetch##update")) {
-                        
+                        // curl
                     }
                     break;
             }
@@ -152,40 +152,24 @@ int main(int, char**)
             ImGui::Text("Response");
 
             // Response başlık bilgileri
-            static int statusCode = 200;
-            static float responseTime = 0.0f;
-            ImGui::Text("Status: %d", statusCode);
+            ImGui::Text("Status: %d", get_response.code.value_or(0));
             ImGui::SameLine();
-            ImGui::Text("Time: %.2f ms", responseTime);
+            ImGui::Text("Time: %.2f ms", get_response.time_took);
 
             // Response içeriği
             ImGui::Separator();
             ImGui::BeginChild("ResponseContent", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
-            ImGui::TextWrapped("%s", responseBuffer);
+            ImGui::TextWrapped("%s", get_response.data.value_or("No response").c_str());
             ImGui::EndChild();
 
             // Clear button
             if (ImGui::Button("Clear Response", ImVec2(-1, 0))) {
-                memset(responseBuffer, 0, sizeof(responseBuffer));
+                get_response.data.value().clear();
+                get_response.code.reset();
+                get_response.time_took = 0.f;
             }
 
             ImGui::EndChild();
-            ImGui::Begin("curl GET test");
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::InputText("url", &get_url);
-            if (ImGui::Button("fetch")) {
-                curl_client->Get(get_url, get_response);
-            }
-
-            if (get_response.code.has_value() && ImGui::TreeNodeEx("Response", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGuiInputTextFlags flags = ImGuiInputTextFlags_ReadOnly;
-                ImGui::Text("Status Code: %d, Time Took: %f ms", get_response.code.value(), get_response.time_took);
-                ImGui::InputTextMultiline("##", &get_response.data.value(), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), flags);
-                ImGui::Text("Size: %d bytes", get_response.data.value().size());
-                ImGui::TreePop();
-            }
-
-
             ImGui::End();
             ImGui::PopFont();
         }

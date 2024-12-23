@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(fman)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(submodules/SDL EXCLUDE_FROM_ALL)
 
@@ -28,7 +29,9 @@ find_package(Threads REQUIRED)
 
 add_library(fman_lib
     lib/fman_http.cpp
+    lib/fman_window_manager.cpp
 )
+target_include_directories(fman_lib PRIVATE ${IMGUI_DIR})
 
 add_executable(fman main.cpp ${IMGUI_ALL_SOURCES})
 target_include_directories(fman PRIVATE lib)
