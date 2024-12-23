@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <curl/curl.h>
+#include <mutex>
 
 namespace fman {
 
