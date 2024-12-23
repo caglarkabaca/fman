@@ -53,8 +53,11 @@ int main(int, char**)
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    std::string get_url = "\0";
+    char responseBuffer[4096] = {0};
+
     fman::CurlClient *curl_client = fman::CurlClient::GetInstance();
-    std::string get_url = "https://httpbin.org/get";
+    //std::string get_url = "https://httpbin.org/get";
     fman::HttpResponse get_response;
 
     // Main loop
@@ -84,22 +87,89 @@ int main(int, char**)
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
             ImGui::PushFont(roboto_light);
-            ImGui::Begin("curl GET test");
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::InputText("url", &get_url);
-            if (ImGui::Button("fetch")) {
-                curl_client->Get(get_url, get_response);
+            ImGui::Begin("API Client");
+
+            // Ana pencereyi üç bölüme ayır
+            const float tabWidth = 150.0f;
+            const float contentPadding = 10.0f;
+            float availWidth = ImGui::GetContentRegionAvail().x;
+            float contentWidth = (availWidth - tabWidth - contentPadding) / 2;
+
+            // Sol taraftaki tablar için
+            ImGui::BeginChild("Tabs", ImVec2(tabWidth, 0), true);
+            static int selected = 0;
+            if (ImGui::Selectable("GET", selected == 0)) selected = 0;
+            if (ImGui::Selectable("POST", selected == 1)) selected = 1;
+            if (ImGui::Selectable("DELETE", selected == 2)) selected = 2;
+            if (ImGui::Selectable("UPDATE", selected == 3)) selected = 3;
+            ImGui::EndChild();
+
+            ImGui::SameLine();
+
+            // Orta kısım - Request alanı
+            ImGui::BeginChild("Content", ImVec2(contentWidth, 0), true);
+
+            // Her tab için ayrı input ve buton
+            switch (selected) {
+                case 0: // GET
+                    ImGui::Text("GET Request");
+                    ImGui::InputText("URL##get", &get_url);
+                    if (ImGui::Button("Fetch##get")) {
+                        curl_client->Get(get_url, get_response);
+                    }
+                    break;
+
+                case 1: // POST
+                    ImGui::Text("POST Request");
+                    ImGui::InputTextMultiline("Data##post", &get_url,  ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
+                    if (ImGui::Button("Fetch##post")) {
+                        // curl
+                    }
+                    break;
+
+                case 2: // DELETE
+                    ImGui::Text("DELETE Request");
+                    ImGui::InputText("ID##delete", &get_url);
+                    if (ImGui::Button("Fetch##delete")) {
+                        // curl
+                    }
+                    break;
+
+                case 3: // UPDATE
+                    ImGui::Text("UPDATE Request");
+                    ImGui::InputTextMultiline("Data##update", &get_url, ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
+                    if (ImGui::Button("Fetch##update")) {
+                        // curl
+                    }
+                    break;
+            }
+            ImGui::EndChild();
+
+            ImGui::SameLine();
+
+            // Sağ kısım - Response alanı
+            ImGui::BeginChild("Response", ImVec2(0, 0), true);
+            ImGui::Text("Response");
+
+            // Response başlık bilgileri
+            ImGui::Text("Status: %d", get_response.code.value_or(0));
+            ImGui::SameLine();
+            ImGui::Text("Time: %.2f ms", get_response.time_took);
+
+            // Response içeriği
+            ImGui::Separator();
+            ImGui::BeginChild("ResponseContent", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
+            ImGui::TextWrapped("%s", get_response.data.value_or("No response").c_str());
+            ImGui::EndChild();
+
+            // Clear button
+            if (ImGui::Button("Clear Response", ImVec2(-1, 0))) {
+                get_response.data.value().clear();
+                get_response.code.reset();
+                get_response.time_took = 0.f;
             }
 
-            if (get_response.code.has_value() && ImGui::TreeNodeEx("Response", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGuiInputTextFlags flags = ImGuiInputTextFlags_ReadOnly;
-                ImGui::Text("Status Code: %d, Time Took: %f ms", get_response.code.value(), get_response.time_took);
-                ImGui::InputTextMultiline("##", &get_response.data.value(), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), flags);
-                ImGui::Text("Size: %d bytes", get_response.data.value().size());
-                ImGui::TreePop();
-            }
-
-
+            ImGui::EndChild();
             ImGui::End();
             ImGui::PopFont();
         }
