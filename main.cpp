@@ -1,4 +1,5 @@
 #include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
 #include <stdio.h>
@@ -54,9 +55,8 @@ int main(int, char**)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    size_t input_size = 1024 * sizeof(char);
-    char *input_buffer = (char*) malloc(input_size);
-    HttpInit();
+    std::string get_url = "\0";
+    fman::CurlClient *curl_client = fman::CurlClient::GetInstance();
 
     // Main loop
     bool done = false;
@@ -86,9 +86,9 @@ int main(int, char**)
         {
             ImGui::PushFont(roboto_light);
             ImGui::Begin("curl GET test");
-            ImGui::InputText("url", input_buffer, input_size);
+            ImGui::InputText("url", &get_url);
             if (ImGui::Button("fetch")) {
-                HttpGet(std::string(input_buffer));
+                curl_client->Get(get_url);
             }
             ImGui::End();
             ImGui::PopFont();

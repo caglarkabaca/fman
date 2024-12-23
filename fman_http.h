@@ -1,44 +1,35 @@
-//
-// Created by Çağlar Kabaca on 23.12.2024.
-//
-
 #ifndef FMAN_HTTP_H
 #define FMAN_HTTP_H
 
 #include <iostream>
 #include <curl/curl.h>
 
-size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* userData) {
-    size_t totalSize = size * nmemb;
-    userData->append((char*)contents, totalSize);
-    return totalSize;
-}
+namespace fman {
 
-CURL* _curl;
+    class CurlClient {
+    public:
+        void Get(std::string &url);
 
-void HttpInit(void) {
-    // cURL başlat
-    _curl = curl_easy_init();
-    if (!_curl) {
-        std::cerr << "Failed to initialize cURL" << std::endl;
-    }
-}
+        CurlClient();
+        ~CurlClient();
 
-void HttpGet(const std::string& url) {
-    CURLcode res;
-    std::string readBuffer;
+        /**
+         * Singletons should not be cloneable, assignable
+         */
+        CurlClient(CurlClient &other) = delete;
+        void operator=(const CurlClient &) = delete;
 
-    curl_easy_setopt(_curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(_curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(_curl, CURLOPT_WRITEDATA, &readBuffer);
-    res = curl_easy_perform(_curl);
+        static CurlClient *GetInstance();
 
-    // Hata kontrolü
-    if (res != CURLE_OK) {
-        std::cerr << "cURL error: " << curl_easy_strerror(res) << std::endl;
-    } else {
-        std::cout << "Response:\n" << readBuffer << std::endl;
-    }
+    private:
+
+        static CurlClient * pinstance_;
+        static std::mutex mutex_;
+
+        CURL* _curl;
+        static size_t _write_callback(void* contents, size_t size, size_t nmemb, std::string* userData);
+    };
+
 }
 
 #endif //FMAN_HTTP_H

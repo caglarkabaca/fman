@@ -1,7 +1,3 @@
-//
-// Created by Çağlar Kabaca on 23.12.2024.
-//
-
 #ifndef FMAN_PATHS_H
 #define FMAN_PATHS_H
 
