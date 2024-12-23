@@ -11,15 +11,29 @@
 
 namespace fman {
 
+    enum HttpMethod {
+        GET,
+        POST,
+        DELETE,
+        PUT,
+        PATCH
+    };
+
+    struct HttpRequest {
+        HttpMethod method;
+        std::string url;
+        std::string body;
+    };
+
     struct HttpResponse {
-        std::optional<int> code = std::nullopt;
+        std::optional<long> code = std::nullopt;
         std::optional<std::string> data = std::nullopt;
         float time_took = 0.f;
     };
 
     class CurlClient {
     public:
-        void Get(std::string &url, fman::HttpResponse &response) noexcept;
+        void Request(HttpRequest &request, fman::HttpResponse &response) noexcept;
 
         CurlClient();
         ~CurlClient();
@@ -41,7 +55,8 @@ namespace fman {
         std::vector<std::thread*> _threads;
 
         CURL* _curl;
-        void _get(const char *url, long &code, std::string &read_buffer);
+
+        void _request(HttpRequest &req, HttpResponse &resp);
         static size_t _write_callback(void* contents, size_t size, size_t nmemb, std::string* userData);
     };
 }

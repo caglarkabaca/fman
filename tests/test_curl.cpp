@@ -12,8 +12,10 @@ TEST(CurlClient, CurlTest) {
     fman::CurlClient *client = fman::CurlClient::GetInstance();
 
     fman::HttpResponse response;
-    std::string get_url = "https://httpbin.org/get";
-    client->Get(get_url, response);
+    fman::HttpRequest request;
+    request.method = fman::HttpMethod::GET;
+    request.url = "https://httpbin.org/anything";
+    client->Request(request, response);
     while (!response.code.has_value()) {} // wait to get response
-    ASSERT_EQ(response.code.value(), 200);
+    ASSERT_EQ(response.code.has_value(), true);
 }

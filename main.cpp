@@ -2,7 +2,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
-#include <stdio.h>
+
 #include <SDL3/SDL.h>
 #include "fman_http.h"
 #include "fman_paths.h"
@@ -53,12 +53,11 @@ int main(int, char**)
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    std::string get_url = "\0";
-    char responseBuffer[4096] = {0};
-
     fman::CurlClient *curl_client = fman::CurlClient::GetInstance();
-    //std::string get_url = "https://httpbin.org/get";
-    fman::HttpResponse get_response;
+    fman::HttpRequest request;
+    request.url = "https://httpbin.org/anything";
+    fman::HttpResponse response;
+    std::string no_res = "No response";
 
     // Main loop
     bool done = false;
@@ -101,7 +100,8 @@ int main(int, char**)
             if (ImGui::Selectable("GET", selected == 0)) selected = 0;
             if (ImGui::Selectable("POST", selected == 1)) selected = 1;
             if (ImGui::Selectable("DELETE", selected == 2)) selected = 2;
-            if (ImGui::Selectable("UPDATE", selected == 3)) selected = 3;
+            if (ImGui::Selectable("PUT", selected == 3)) selected = 3;
+            if (ImGui::Selectable("PATCH", selected == 4)) selected = 4;
             ImGui::EndChild();
 
             ImGui::SameLine();
@@ -113,35 +113,47 @@ int main(int, char**)
             switch (selected) {
                 case 0: // GET
                     ImGui::Text("GET Request");
-                    ImGui::InputText("URL##get", &get_url);
+                    ImGui::InputText("URL##get", &request.url);
+                    ImGui::InputTextMultiline("Data##get", &request.body,  ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
                     if (ImGui::Button("Fetch##get")) {
-                        curl_client->Get(get_url, get_response);
+                        request.method = fman::HttpMethod::GET;
+                        curl_client->Request(request, response);
                     }
                     break;
 
                 case 1: // POST
                     ImGui::Text("POST Request");
-                    ImGui::InputTextMultiline("Data##post", &get_url,  ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
+                    ImGui::InputText("URL##post", &request.url);
+                    ImGui::InputTextMultiline("Data##post", &request.body,  ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
                     if (ImGui::Button("Fetch##post")) {
-                        // curl
+                        request.method = fman::HttpMethod::POST;
+                        curl_client->Request(request, response);
                     }
                     break;
 
                 case 2: // DELETE
                     ImGui::Text("DELETE Request");
-                    ImGui::InputText("ID##delete", &get_url);
+                    ImGui::InputText("ID##delete", &request.url);
                     if (ImGui::Button("Fetch##delete")) {
                         // curl
                     }
                     break;
 
-                case 3: // UPDATE
-                    ImGui::Text("UPDATE Request");
-                    ImGui::InputTextMultiline("Data##update", &get_url, ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
-                    if (ImGui::Button("Fetch##update")) {
+                case 3: // PUT
+                    ImGui::Text("PUT Request");
+                    ImGui::InputTextMultiline("Data##put", &request.url, ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
+                    if (ImGui::Button("Fetch##put")) {
                         // curl
                     }
                     break;
+
+                case 4: // PATCH
+                    ImGui::Text("PATCH Request");
+                ImGui::InputTextMultiline("Data##patch", &request.url, ImVec2(-1, ImGui::GetWindowHeight() * 0.4f));
+                if (ImGui::Button("Fetch##patch")) {
+                    // curl
+                }
+                break;
             }
             ImGui::EndChild();
 
@@ -152,21 +164,20 @@ int main(int, char**)
             ImGui::Text("Response");
 
             // Response başlık bilgileri
-            ImGui::Text("Status: %d", get_response.code.value_or(0));
+            ImGui::Text("Status: %d", response.code.value_or(0));
             ImGui::SameLine();
-            ImGui::Text("Time: %.2f ms", get_response.time_took);
+            ImGui::Text("Time: %.2f ms", response.time_took);
 
             // Response içeriği
             ImGui::Separator();
             ImGui::BeginChild("ResponseContent", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
-            ImGui::TextWrapped("%s", get_response.data.value_or("No response").c_str());
+            ImGui::InputTextMultiline("##", (response.data.has_value()) ? &response.data.value() : &no_res,
+                                      ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_ReadOnly);
             ImGui::EndChild();
 
             // Clear button
             if (ImGui::Button("Clear Response", ImVec2(-1, 0))) {
-                get_response.data.value().clear();
-                get_response.code.reset();
-                get_response.time_took = 0.f;
+                response = fman::HttpResponse();
             }
 
             ImGui::EndChild();
